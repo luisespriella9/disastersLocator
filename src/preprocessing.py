@@ -19,7 +19,10 @@ def build_vocab(tweets_array):
 def process_dataset(dataset, vocab=None, max_len=None, tweets_column='text', target_column='target'):
     tweets = dataset[tweets_column].values
     targets = np.array(dataset[target_column].values)
+    processed_tweets = process_all_tweets(tweets, vocab, max_len)
+    return processed_tweets, targets, vocab, max_len
 
+def process_all_tweets(tweets, vocab=None, max_len=None):
     cleaned_tweets = [process_tweet(tweet) for tweet in tweets]
     if not vocab:
         vocab = build_vocab(cleaned_tweets)
@@ -27,11 +30,10 @@ def process_dataset(dataset, vocab=None, max_len=None, tweets_column='text', tar
     if not max_len:
         max_len = max([len(tweet) for tweet in transformed_tweets])+1 #+1 for end of sentence tag 
     padded_tweets = pad_tweets(transformed_tweets, vocab, max_len, end_tag='__</e>__', pad_tag='__PAD__')
-    return padded_tweets, targets, vocab, max_len
-
+    return padded_tweets
 
 def process_tweet(text):
-    if type(text)!=str:
+    if type(text)!=str and type(text)!=np.str_:
         print("type of ", type(text), "cannot be processed")
         return
     # remove special characters

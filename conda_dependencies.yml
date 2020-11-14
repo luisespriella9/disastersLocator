@@ -1,0 +1,12 @@
+channels:
+- conda-forge
+dependencies:
+- python=3.6.2
+- pip:
+  - azureml-defaults
+  - keras
+  - matplotlib
+  - tensorflow
+  - scikit-learn
+  - nltk
+  - azure-storage-blob
