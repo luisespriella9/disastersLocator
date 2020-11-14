@@ -1,15 +1,10 @@
 import os
-import sys
-import matplotlib.pyplot as plt
 import preprocessing as preprocessing
-import joblib
 import json
 import tensorflow as tf
-from azureml.core import Dataset, Run, Workspace
-from azureml.core.compute import AmlCompute, ComputeTarget
-from sklearn.metrics import accuracy_score, confusion_matrix
+from azureml.core import Dataset, Run
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from azure.storage.blob import BlobClient
 
 run = Run.get_context()
 workspace = run.experiment.workspace
@@ -53,7 +48,6 @@ y_pred = model.predict(X_test)
 y_pred = [0 if pred < 0.5 else 1 for pred in y_pred]
 
 accuracy = accuracy_score(y_test, y_pred)
-confusion_matrix(y_test, y_pred)
 
 # Log Metrics
 run.log('accuracy', accuracy)
@@ -75,13 +69,3 @@ with open('./outputs/model/vocab.json', 'w') as f:
 language_params = {'max_len': max_len}
 with open('./outputs/model/params.json', 'w') as f:
     f.write(json.dumps(language_params))
-'''
-# save vocab
-vocab_blob = BlobClient.from_connection_string(conn_str=storage_account_connection_string, container_name="language", blob_name="vocab.json")
-vocab_blob.upload_blob(json.dumps(vocab), overwrite=True)
-
-# save language model parameters
-language_params = {'max_len': max_len}
-params_blob = BlobClient.from_connection_string(conn_str=storage_account_connection_string, container_name="language", blob_name="params.json")
-params_blob.upload_blob(json.dumps(language_params), overwrite=True)
-'''
