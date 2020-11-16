@@ -12,5 +12,5 @@ steps:
 - script: |
     pip3 install azureml-sdk
     pip3 install azureml-widgets
-    python3 src/pipeline.py -a $(pipelineArgs)
+    python3 src/pipeline.py -a ${pipelineArgs}
   displayName: 'Run Pipeline'

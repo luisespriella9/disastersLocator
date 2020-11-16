@@ -51,7 +51,10 @@ def parse_args(secrets: str) -> dict:
     args = {
         "subscription_id": "",
         "resource_group": "",
-        "workspace_name": ""
+        "workspace_name": "",
+        "tenantId": "",
+        "clientId": "",
+        "clientSecret": ""
     }
     print(secrets)
     variables = json.loads(secrets)
