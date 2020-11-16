@@ -6,8 +6,11 @@ from azureml.core.compute import AmlCompute, ComputeTarget
 from azureml.widgets import RunDetails
 from pathlib import Path
 
-def get_workspace(subscription_id: str, resource_group: str, workspace_name: str) -> Workspace:
-    return Workspace(subscription_id, resource_group, workspace_name)
+def get_workspace(subscription_id: str, resource_group: str, workspace_name: str, tenant_id: str, client_id: str, client_secret: str) -> Workspace:
+    svcprincipal = ServicePrincipalAuthentication(tenant_id=tenant_id,
+                                                  service_principal_id=client_id,
+                                                  service_principal_password=client_secret)
+    return Workspace(subscription_id, resource_group, workspace_name, auth=svcprincipal)
 
 def get_compute(ws: Workspace, compute_name: str):
     compute_min_nodes = os.environ.get("AML_COMPUTE_CLUSTER_MIN_NODES", 0)
