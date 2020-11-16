@@ -5,7 +5,8 @@ from azureml.widgets import RunDetails
 from pathlib import Path
 
 def get_workspace():
-    return Workspace.from_config()
+    print(os.listdir())
+    return Workspace.from_config("config.json")
 
 def get_compute(ws: Workspace, compute_name: str):
     compute_min_nodes = os.environ.get("AML_COMPUTE_CLUSTER_MIN_NODES", 0)
