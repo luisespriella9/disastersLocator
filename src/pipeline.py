@@ -75,7 +75,7 @@ if __name__ == "__main__":
     secrets = parse_args(args.arguments)
     
     # get AML Workspace
-    ws = get_workspace(secrets["subscription_id"], secrets["resource_group"], secrets["workspace_name"])
+    ws = get_workspace(secrets["subscription_id"], secrets["resource_group"], secrets["workspace_name"], secrets["tenantId"], secrets["clientId"], secrets["clientSecret"])
 
     # get compute
     compute_name = os.environ.get("AML_COMPUTE_CLUSTER_NAME", "nlp-cpu-cluster")
