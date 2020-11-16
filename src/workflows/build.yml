@@ -1,7 +1,13 @@
 name: rebuild and run ml pipeline
 
+on:
+  push:
+    branches:
+      main
+    paths:
+    - '**.py'
 jobs:
-  - job: build-and-deploy
+  build-and-deploy:
     runs-on: ubuntu-latest
     env:
       AML_ENV: ${{ secrets.AMLENV }}
