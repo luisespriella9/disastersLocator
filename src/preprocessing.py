@@ -19,7 +19,7 @@ def build_vocab(tweets_array):
 def process_dataset(dataset, vocab=None, max_len=None, tweets_column='text', target_column='target'):
     tweets = dataset[tweets_column].values
     targets = np.array(dataset[target_column].values)
-    processed_tweets = process_tweets(tweets, vocab, max_len)
+    processed_tweets, vocab, max_len = process_tweets(tweets, vocab, max_len)
     return processed_tweets, targets, vocab, max_len
 
 def process_tweets(tweets, vocab=None, max_len=None):
@@ -30,7 +30,7 @@ def process_tweets(tweets, vocab=None, max_len=None):
     if not max_len:
         max_len = max([len(seq) for seq in sequences])+1 #+1 for end of sentence tag 
     padded_tweets = pad_sequences(sequences, vocab, max_len, end_tag='__</e>__', pad_tag='__PAD__')
-    return padded_tweets
+    return padded_tweets, vocab, max_len
 
 def clean_tweet(text):
     if type(text)!=str and type(text)!=np.str_:
