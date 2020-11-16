@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 from azureml.core import Dataset, Environment, Experiment, ScriptRunConfig, Workspace
+from azureml.core.authentication import ServicePrincipalAuthentication
 from azureml.core.compute import AmlCompute, ComputeTarget
 from azureml.widgets import RunDetails
 from pathlib import Path
