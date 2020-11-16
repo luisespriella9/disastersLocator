@@ -1,12 +1,13 @@
 import os
+import json
+import argparse
 from azureml.core import Dataset, Environment, Experiment, ScriptRunConfig, Workspace
 from azureml.core.compute import AmlCompute, ComputeTarget
 from azureml.widgets import RunDetails
 from pathlib import Path
 
-def get_workspace():
-    print(os.listdir())
-    return Workspace.from_config("config.json")
+def get_workspace(subscription_id: str, resource_group: str, workspace_name: str) -> Workspace:
+    return Workspace(subscription_id, resource_group, workspace_name)
 
 def get_compute(ws: Workspace, compute_name: str):
     compute_min_nodes = os.environ.get("AML_COMPUTE_CLUSTER_MIN_NODES", 0)
@@ -23,15 +24,15 @@ def create_experiment(ws: Workspace, experiment_name: str):
     return experiment
 
 def get_environment(env_name: str):
-    env = Environment.from_conda_specification(name=env_name, file_path='../conda_dependencies.yml')
+    env = Environment.from_conda_specification(name=env_name, file_path='conda_dependencies.yml')
     return env
 
-def train_step(compute_target: ComputeTarget, env: Environment):
+def train_step(compute_target: ComputeTarget, env: Environment, experiment: Experiment):
     args = [
         '--batch-size', 16,
        '--epochs', 2]
 
-    src = ScriptRunConfig(source_directory=Path(os.getcwd()).resolve(),
+    src = ScriptRunConfig(source_directory=os.path.join(Path(os.getcwd()).resolve(), 'src'),
                         script='train_cnn.py',
                         arguments=args,
                         compute_target=compute_target,
@@ -45,9 +46,29 @@ def train_step(compute_target: ComputeTarget, env: Environment):
 def register_step(model_name: str, run: RunDetails):
     run.register_model(model_name=model_name, model_path = "outputs/model")
 
+
+def parse_args(secrets: str) -> dict:
+    args = {
+        "subscription_id": "",
+        "resource_group": "",
+        "workspace_name": ""
+    }
+    print(secrets)
+    variables = json.loads(secrets)
+    for k,v in variables.items():
+        if k in args:
+            args[k] = v
+    return args
+
 if __name__ == "__main__":
+    # get secrets
+    parser = argparse.ArgumentParser(description='Seer Pipeline')
+    parser.add_argument('-a', '--arguments', help='json file with arguments')
+    args = parser.parse_args()
+    secrets = parse_args(args.arguments)
+    
     # get AML Workspace
-    ws = get_workspace()
+    ws = get_workspace(secrets["subscription_id"], secrets["resource_group"], secrets["workspace_name"])
 
     # get compute
     compute_name = os.environ.get("AML_COMPUTE_CLUSTER_NAME", "nlp-cpu-cluster")
@@ -61,7 +82,7 @@ if __name__ == "__main__":
     env = get_environment('keras-env')
 
     # train
-    run = train_step(compute, env)
+    run = train_step(compute, env, experiment)
 
     # register model
     model_name = "disaster_predictor_cnn"
