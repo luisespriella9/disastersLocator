@@ -1,12 +1,5 @@
 name: rebuild and run ml pipeline
 
-on:
-  push:
-    branches:
-      main
-    paths:
-    - '**.py'
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
