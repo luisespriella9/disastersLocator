@@ -11,5 +11,5 @@ container: mcr.microsoft.com/mlops/python:latest
 steps:
 - script: |
     pip3 install azureml-sdk
-    python3 src/deploy.py
+    python3 src/deploy.py -a $(pipelineArgs)
   displayName: 'Run Pipeline'

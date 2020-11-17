@@ -1,16 +1,41 @@
 import os
+import argparse
+import json
 from azureml.core import Environment, Run, Workspace
+from azureml.core.authentication import ServicePrincipalAuthentication
 from azureml.core.model import InferenceConfig, Model
 from azureml.core.webservice import AciWebservice
 
-def main():
-    try:
-        run = Run.get_context()
-        workspace = run.experiment.workspace
-    except:
-        # running in offline mode
-        workspace = Workspace.from_config()
+def get_workspace(subscription_id: str, resource_group: str, workspace_name: str, tenant_id: str, client_id: str, client_secret: str) -> Workspace:
+    if (tenant_id and client_id and client_secret):
+        auth = ServicePrincipalAuthentication(tenant_id=tenant_id,
+                                                  service_principal_id=client_id,
+                                                  service_principal_password=client_secret)
+    else:
+        auth=None
+    return Workspace(subscription_id, resource_group, workspace_name, auth=auth)
 
+def parse_args(secrets: str) -> dict:
+    args = {
+        "subscription_id": "",
+        "resource_group": "",
+        "workspace_name": "",
+        "tenantId": "",
+        "clientId": "",
+        "clientSecret": ""
+    }
+    
+    if os.path.exists("config.json"):
+        with open("config.json") as f:
+            variables = json.load(f)
+    else:
+        variables = json.loads(secrets)
+    for k,v in variables.items():
+        if k in args:
+            args[k] = v
+    return args
+
+def main(workspace: Workspace):
     # get env
     keras_env = Environment.from_conda_specification(name='keras-env', file_path='../conda_dependencies.yml')
 
@@ -34,4 +59,13 @@ def main():
     service.wait_for_deployment(show_output=False)
 
 if __name__ == "__main__":
-    main()
+    # get secrets
+    parser = argparse.ArgumentParser(description='Seer Pipeline')
+    parser.add_argument('-a', '--arguments', help='json file with arguments')
+    args = parser.parse_args()
+    secrets = parse_args(args.arguments)
+    
+    # get AML Workspace
+    ws = get_workspace(secrets["subscription_id"], secrets["resource_group"], secrets["workspace_name"], secrets["tenantId"], secrets["clientId"], secrets["clientSecret"])
+
+    main(ws)
