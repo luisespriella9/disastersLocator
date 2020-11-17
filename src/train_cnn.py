@@ -54,7 +54,7 @@ def main(source_path, target_path, epochs, batch_size):
     X_validation = preprocessing.convert_to_sequence(X_validation, vocab, max_len)
 
     model = TweetsDisasterClassifier(vocab_size=len(vocab), embedding_dim=100, max_length=max_len)
-    model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=16, epochs=2)
+    model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=batch_size, epochs=epochs)
 
     # Measure Test Results
     y_pred = model.predict(X_test)
@@ -81,8 +81,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='data cleaning for tweets')
     parser.add_argument('-s', '--source_path', help='directory to training data', default=outputs_path)
     parser.add_argument('-t', '--target_path', help='directory to previous data step', default=models_path)
-    parser.add_argument('-e', '--epochs', help='number of epochs', default=10, type=int)
-    parser.add_argument('-b', '--batch_size', help='batch size', default=32, type=int)
+    parser.add_argument('-e', '--epochs', help='number of epochs', default=2, type=int)
+    parser.add_argument('-b', '--batch_size', help='batch size', default=16, type=int)
     args = parser.parse_args()
 
     params = vars(args)

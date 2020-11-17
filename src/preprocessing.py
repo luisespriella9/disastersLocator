@@ -12,7 +12,7 @@ stopwords_english = stopwords.words('english')
 def build_vocab(tweets_array):
     vocab = {'__PAD__': 0, '__</e>__': 1, '__UNK__': 2} 
     for tweet in tweets_array:
-        for word in tweet:
+        for word in tweet.split():
             if word not in vocab:
                 vocab[word] = len(vocab)
     return vocab
@@ -56,7 +56,7 @@ def tweets_to_sequences(sentence_tweets, vocab, unk_tag='__UNK__'):
     transformed_tweets = []
     for tweet in sentence_tweets:
         processed_tweet = []
-        for word in tweet:
+        for word in tweet.split():
             if word in vocab:
                 processed_tweet.append(vocab[word])
             else:
