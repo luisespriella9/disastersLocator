@@ -1,6 +1,7 @@
 import nltk
 import re
 import numpy as np
+import pandas as pd
 from nltk.corpus import stopwords 
 from nltk.stem import PorterStemmer
 
@@ -20,17 +21,17 @@ def process_dataset(dataset, vocab=None, max_len=None, tweets_column='text', tar
     tweets = dataset[tweets_column].values
     targets = np.array(dataset[target_column].values)
     processed_tweets, vocab, max_len = process_tweets(tweets, vocab, max_len)
-    return processed_tweets, targets, vocab, max_len
+    processed_dataset = pd.DataFrame(processed_tweets, columns=['text'])
+    processed_dataset['target'] = targets
+    return processed_dataset, vocab, max_len
 
 def process_tweets(tweets, vocab=None, max_len=None):
     cleaned_tweets = [clean_tweet(tweet) for tweet in tweets]
     if not vocab:
         vocab = build_vocab(cleaned_tweets)
-    sequences = tweets_to_sequences(cleaned_tweets, vocab, unk_tag='__UNK__')
     if not max_len:
-        max_len = max([len(seq) for seq in sequences])+1 #+1 for end of sentence tag 
-    padded_tweets = pad_sequences(sequences, vocab, max_len, end_tag='__</e>__', pad_tag='__PAD__')
-    return padded_tweets, vocab, max_len
+        max_len = max([len(tweet) for tweet in cleaned_tweets])+1 #+1 for end of sentence tag 
+    return cleaned_tweets, vocab, max_len
 
 def clean_tweet(text):
     if type(text)!=str and type(text)!=np.str_:
@@ -39,12 +40,17 @@ def clean_tweet(text):
     # remove special characters
     text = re.sub('[^A-Za-z0-9 ]+', '', text)
     # remove stopwords
-    cleaned_tweet = []
+    cleaned_tweet = ''
     for word in text.split():
         stem_word = stemmer.stem(word)
         if stem_word not in stopwords_english:
-            cleaned_tweet.append(stem_word)
+            cleaned_tweet += ' '+stem_word
     return cleaned_tweet
+
+def convert_to_sequence(text_array, vocab, max_len):
+    sequences = tweets_to_sequences(text_array, vocab, unk_tag='__UNK__')
+    padded_sequences = pad_sequences(sequences, vocab, max_len, end_tag='__</e>__', pad_tag='__PAD__')
+    return padded_sequences
 
 def tweets_to_sequences(sentence_tweets, vocab, unk_tag='__UNK__'):
     transformed_tweets = []

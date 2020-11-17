@@ -1,32 +1,15 @@
 import os
-import preprocessing as preprocessing
+import argparse
 import json
+import pandas as pd
+import preprocessing as preprocessing
 import tensorflow as tf
-from azureml.core import Dataset, Run
+from azureml.core import Run
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-run = Run.get_context()
-workspace = run.experiment.workspace
-keyvault = workspace.get_default_keyvault()
-storage_account_connection_string = keyvault.get_secret("storage-account-connection-string")
-
-# Get a dataset by name
-dataset = Dataset.get_by_name(workspace=workspace, name='disaster_tweets_train')
-
-# Load a TabularDataset into pandas DataFrame
-tweets_pd = dataset.to_pandas_dataframe()
-
-# Process Training Data
-tweets_pd.dropna(inplace=True)
-tweets_pd.reset_index()
-
-train, test = train_test_split(tweets_pd, test_size=0.4, random_state=42, shuffle=True)
-test, validation = train_test_split(test, test_size=0.5, random_state=42, shuffle=True)
-
-X_train, y_train, vocab, max_len = preprocessing.process_dataset(train, tweets_column='text', target_column='target')
-X_test, y_test, _, _ = preprocessing.process_dataset(test, vocab, max_len, tweets_column='text', target_column='target')
-X_validation, y_validation, _, _ = preprocessing.process_dataset(validation, vocab, max_len, tweets_column='text', target_column='target')
+def split_input_and_targets(dataset):
+    return dataset['text'].values, dataset['target'].values
 
 # CNN Model
 def TweetsDisasterClassifier(vocab_size = 1000, embedding_dim=100, max_length=100):
@@ -40,32 +23,68 @@ def TweetsDisasterClassifier(vocab_size = 1000, embedding_dim=100, max_length=10
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     return model
 
-model = TweetsDisasterClassifier(vocab_size=len(vocab), embedding_dim=100, max_length=max_len)
-model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=16, epochs=2)
+def main(source_path, target_path, epochs, batch_size):
+    run = Run.get_context()
 
-# Measure Test Results
-y_pred = model.predict(X_test)
-y_pred = [0 if pred < 0.5 else 1 for pred in y_pred]
+    # load vocab
+    language_folder = source_path+'/language/'
+    with open(language_folder+'vocab.json', 'r') as json_file:
+        vocab = json.load(json_file)
 
-accuracy = accuracy_score(y_test, y_pred)
+    # load language params
+    with open(language_folder+'params.json', 'r') as json_file:
+        language_params = json.load(json_file)
+        max_len = language_params['max_len']
 
-# Log Metrics
-run.log('accuracy', accuracy)
+    # load training, test and validation data
+    processed_data_folder = source_path+'/processed_tweets/'
+    tweets_pd = pd.read_csv(processed_data_folder+'tweets.csv')
 
-# save model
-os.makedirs('./outputs/model', exist_ok=True)
-model_json = model.to_json()
-with open('./outputs/model/model.json', 'w') as f:
-    f.write(model_json)
+    train, test = train_test_split(tweets_pd, test_size=0.4, random_state=42, shuffle=True)
+    test, validation = train_test_split(test, test_size=0.5, random_state=42, shuffle=True)
 
-#model.save_weights('./outputs/model/cnn.h5')
-model.save('./outputs/model')
+    # split text and targets
+    X_train, y_train = split_input_and_targets(train)
+    X_test, y_test = split_input_and_targets(test)
+    X_validation, y_validation = split_input_and_targets(validation)
 
-# save vocab
-with open('./outputs/model/vocab.json', 'w') as f:
-    f.write(json.dumps(vocab))
+    # convert text to sequences
+    X_train = preprocessing.convert_to_sequence(X_train, vocab, max_len)
+    X_test = preprocessing.convert_to_sequence(X_test, vocab, max_len)
+    X_validation = preprocessing.convert_to_sequence(X_validation, vocab, max_len)
 
-# save language params
-language_params = {'max_len': max_len}
-with open('./outputs/model/params.json', 'w') as f:
-    f.write(json.dumps(language_params))
+    model = TweetsDisasterClassifier(vocab_size=len(vocab), embedding_dim=100, max_length=max_len)
+    model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=16, epochs=2)
+
+    # Measure Test Results
+    y_pred = model.predict(X_test)
+    y_pred = [0 if pred < 0.5 else 1 for pred in y_pred]
+
+    accuracy = accuracy_score(y_test, y_pred)
+
+    # Log Metrics
+    run.log('accuracy', accuracy)
+
+    # save model
+    os.makedirs(target_path, exist_ok=True)
+    model_json = model.to_json()
+    with open(os.path.join(target_path, 'model.json'), 'w') as f:
+        f.write(model_json)
+
+    model.save(target_path)
+
+if __name__ == "__main__":
+    # Default Paths when running offline
+    outputs_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'outputs')
+    models_path = os.path.join(outputs_path, 'model')
+
+    parser = argparse.ArgumentParser(description='data cleaning for tweets')
+    parser.add_argument('-s', '--source_path', help='directory to training data', default=outputs_path)
+    parser.add_argument('-t', '--target_path', help='directory to previous data step', default=models_path)
+    parser.add_argument('-e', '--epochs', help='number of epochs', default=10, type=int)
+    parser.add_argument('-b', '--batch_size', help='batch size', default=32, type=int)
+    args = parser.parse_args()
+
+    params = vars(args)
+
+    main(**params)

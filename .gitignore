@@ -53,3 +53,5 @@ geckodriver.log
 
 # Custom Ignore
 *.json
+*.csv
+outputs/
