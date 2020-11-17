@@ -36,12 +36,11 @@ def parse_args(secrets: str) -> dict:
     return args
 
 def main(workspace: Workspace):
-    script_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
     # get env
-    keras_env = Environment.from_conda_specification(name='keras-env', file_path=script_folder+'/../conda_dependencies.yml')
+    keras_env = Environment.from_conda_specification(name='keras-env', file_path='conda_dependencies.yml')
 
     # config
+    script_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     inference_config = InferenceConfig(source_directory=script_folder, entry_script='scoring.py', environment=keras_env)
     deployment_config = AciWebservice.deploy_configuration(cpu_cores=1, 
                                                memory_gb=1, 
