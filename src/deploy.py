@@ -40,8 +40,7 @@ def main(workspace: Workspace):
     keras_env = Environment.from_conda_specification(name='keras-env', file_path='conda_dependencies.yml')
 
     # config
-    print(os.listdir())
-    inference_config = InferenceConfig(source_directory='.', entry_script='scoring.py', environment=keras_env)
+    inference_config = InferenceConfig(source_directory='src', entry_script='scoring.py', environment=keras_env)
     deployment_config = AciWebservice.deploy_configuration(cpu_cores=1, 
                                                memory_gb=1, 
                                                tags={"data": "Tweets",  "method" : "keras"}, 
