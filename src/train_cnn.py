@@ -8,9 +8,6 @@ from azureml.core import Run
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-def split_input_and_targets(dataset):
-    return dataset['text'].values, dataset['target'].values
-
 # CNN Model
 def TweetsDisasterClassifier(vocab_size = 1000, embedding_dim=100, max_length=100):
     model = tf.keras.models.Sequential()
@@ -44,9 +41,9 @@ def main(source_path, target_path, epochs, batch_size):
     test, validation = train_test_split(test, test_size=0.5, random_state=42, shuffle=True)
 
     # split text and targets
-    X_train, y_train = split_input_and_targets(train)
-    X_test, y_test = split_input_and_targets(test)
-    X_validation, y_validation = split_input_and_targets(validation)
+    X_train, y_train = preprocessing.split_input_and_targets(train)
+    X_test, y_test = preprocessing.split_input_and_targets(test)
+    X_validation, y_validation = preprocessing.split_input_and_targets(validation)
 
     # convert text to sequences
     X_train = preprocessing.convert_to_sequence(X_train, vocab, max_len)

@@ -71,3 +71,6 @@ def pad_sequences(sequences, vocab, max_len, end_tag='__</e>__', pad_tag='__PAD_
         if (len(padded_sequence) == max_len):
             padded_sequences.append(padded_sequence)
     return np.array(padded_sequences)
+
+def split_input_and_targets(dataset):
+    return dataset['text'].values, dataset['target'].values
